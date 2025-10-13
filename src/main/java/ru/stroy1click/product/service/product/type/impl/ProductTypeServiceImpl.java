@@ -1,0 +1,169 @@
+package ru.stroy1click.product.service.product.type.impl;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import ru.stroy1click.product.cache.CacheClear;
+import ru.stroy1click.product.dto.ProductTypeDto;
+import ru.stroy1click.product.exception.NotFoundException;
+import ru.stroy1click.product.mapper.ProductTypeMapper;
+import ru.stroy1click.product.entity.ProductType;
+import ru.stroy1click.product.repository.ProductTypeRepository;
+import ru.stroy1click.product.service.storage.StorageService;
+import ru.stroy1click.product.service.product.type.ProductTypeService;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class ProductTypeServiceImpl implements ProductTypeService {
+
+    private final ProductTypeRepository productTypeRepository;
+
+    private final ProductTypeMapper productTypeMapper;
+
+    private final CacheClear cacheClear;
+
+    private final MessageSource messageSource;
+
+    private final StorageService storageService;
+
+    @Override
+    @Cacheable(value = "productType", key = "#id")
+    public ProductTypeDto get(Integer id) {
+        log.info("get {}", id);
+        return this.productTypeMapper.toDto(this.productTypeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        this.messageSource.getMessage(
+                                "error.product_type.not_found",
+                                null,
+                                Locale.getDefault()
+                        )
+                )));
+    }
+
+    @Override
+    @Transactional
+    public void create(ProductTypeDto productTypeDto) {
+        log.info("create {}", productTypeDto);
+        this.productTypeRepository.save(this.productTypeMapper.toEntity(productTypeDto));
+    }
+
+    @Override
+    @CacheEvict(value = "productType", key = "#id")
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "productType", key = "#id"),
+            @CacheEvict(value = "productsTypesOfSubcategory", key = "#productTypeDto.subcategoryId")
+    })
+    public void update(Integer id, ProductTypeDto productTypeDto) {
+        log.info("update {}, {}", id, productTypeDto);
+        this.productTypeRepository.findById(id).ifPresentOrElse(productType -> {
+            ProductType updatedProductType = ProductType.builder()
+                    .id(id)
+                    .title(productTypeDto.getTitle())
+                    .subcategory(productType.getSubcategory())
+                    .products(productType.getProducts())
+                    .build();
+            this.productTypeRepository.save(updatedProductType);
+        }, () -> {
+            throw new NotFoundException(
+                    this.messageSource.getMessage(
+                            "error.product_type.not_found",
+                            null,
+                            Locale.getDefault()
+                    )
+            );
+        });
+    }
+
+    @Override
+    @CacheEvict(value = "productType", key = "#id")
+    @Transactional
+    public void delete(Integer id) {
+        log.info("delete {}", id);
+        ProductType productType = this.productTypeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        this.messageSource.getMessage(
+                                "error.product_type.not_found",
+                                null,
+                                Locale.getDefault()
+                        )
+                ));
+        this.productTypeRepository.delete(productType);
+        this.cacheClear.clearProductsTypesOfSubcategory(productType.getSubcategory().getId());
+    }
+
+    @Override
+    public Optional<ProductType> getByTitle(String title) {
+        return this.productTypeRepository.findByTitle(title);
+    }
+
+    @Override
+    @Cacheable(value = "productTypesBySubcategory")
+    public List<ProductTypeDto> getBySubcategory(Integer subcategoryId) {
+        log.info("getBySubcategory {}", subcategoryId);
+        List<ProductType> list = this.productTypeRepository.findBySubcategory_Id(subcategoryId);
+        if(!list.isEmpty()){
+            return list.stream()
+                    .map(this.productTypeMapper::toDto)
+                    .toList();
+        } else {
+            throw new NotFoundException(
+                    this.messageSource.getMessage(
+                            "error.product_types.not_found",
+                            null,
+                            Locale.getDefault()
+                    )
+            );
+        }
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "productType", key = "#id")
+    public void assignImage(Integer id, MultipartFile image) {
+        log.info("assignImage {}", id);
+        ProductType productType = this.productTypeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        this.messageSource.getMessage(
+                                "error.product_type.not_found",
+                                null,
+                                Locale.getDefault()
+                        )
+                ));
+        String imageName = this.storageService.uploadImage(image);
+        productType.setImage(imageName);
+
+        this.cacheClear.clearProductsTypesOfSubcategory(productType.getSubcategory().getId());
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "productType", key = "#id")
+    public void deleteImage(Integer id, String imageName) {
+        ProductType productType = this.productTypeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        this.messageSource.getMessage(
+                                "error.product_type.not_found",
+                                null,
+                                Locale.getDefault()
+                        )
+                ));
+        this.storageService.deleteImage(imageName);
+        productType.setImage(null);
+
+        this.cacheClear.clearProductsTypesOfSubcategory(productType.getSubcategory().getId());
+    }
+
+}

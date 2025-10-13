@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 import ru.stroy1click.product.dto.CategoryDto;
-import ru.stroy1click.product.model.Category;
+import ru.stroy1click.product.entity.Category;
 
 import java.util.List;
 

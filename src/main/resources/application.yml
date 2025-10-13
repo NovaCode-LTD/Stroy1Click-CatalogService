@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: Product-Service
+  cache:
+    type: redis
+    cache-names: redis-cache
+    redis:
+      time-to-live: 3000
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    open-in-view: false
+  datasource:
+    url: jdbc:postgresql://localhost:5432/stroy1click
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  messages:
+    basename: messages
+    encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 900MB
+
+logging:
+  file:
+    path: logs
+
+server:
+  port: 7070
+
+s3:
+  access-key: 0142b1a945d74754879395d62df582c2
+  secret-key: 20efa111cbc54ae79e66b03b942b2a24
+  region: ru-7
+  bucket-name: stroy1clickdev
+
+resilience4j:
+  ratelimiter:
+    instances:
+      storageLimiter:
+        limitForPeriod: 100
+        limitRefreshPeriod: 1s
+      productLimiter:
+        limitForPeriod: 30
+        limitRefreshPeriod: 1s
+      categoryLimiter:
+        limit-for-period: 30
+        limitRefreshPeriod: 1s
+      subcategoryLimiter:
+        limit-for-period: 30
+        limitRefreshPeriod: 1s
+      productTypeLimiter:
+        limit-for-period: 30
+        limitRefreshPeriod: 1s
+      attributeLimiter:
+        limit-for-period: 30
+        limit-refresh-period: 1s
+      productTypeAttributeLimiter:
+        limit-for-period: 30
+        limit-refresh-period: 1s
+      productAttributeLimiter:
+        limit-for-period: 30
+        limit-refresh-period: 1s

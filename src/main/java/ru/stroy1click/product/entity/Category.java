@@ -1,4 +1,4 @@
-package ru.stroy1click.product.model;
+package ru.stroy1click.product.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@Table(schema = "product", name = "subcategories")
+@Table(schema = "product", name = "categories")
 @Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Subcategory {
+public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,13 +24,9 @@ public class Subcategory {
 
     private String image;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", referencedColumnName = "id")
-    private Category category;
+    @OneToMany(mappedBy = "category")
+    private List<Subcategory> subcategories;
 
-    @OneToMany(mappedBy = "subcategory")
-    private List<ProductType> productTypes;
-
-    @OneToMany(mappedBy = "subcategory")
+    @OneToMany(mappedBy = "category")
     private List<Product> products;
 }

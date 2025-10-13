@@ -23,7 +23,6 @@ public class ProductTypeDto implements Serializable {
     @Min(value = 1, message = "{validation.producttypedto.subcategory_id.min}")
     private Integer subcategoryId;
 
-    @NotBlank(message = "{validation.producttypedto.image.not_blank}")
     private String image;
 
     @NotBlank(message = "{validation.producttypedto.title.not_blank}")

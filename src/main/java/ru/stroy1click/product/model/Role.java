@@ -1,4 +1,4 @@
-package ru.stroy1click.product.dto;
+package ru.stroy1click.product.model;
 
 public enum Role {
 

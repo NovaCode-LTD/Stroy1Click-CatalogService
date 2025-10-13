@@ -1,10 +1,12 @@
-package ru.stroy1click.product.model;
+package ru.stroy1click.product.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @Table(schema = "product", name = "products")
@@ -39,4 +41,8 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "product_type_id", referencedColumnName = "id")
     private ProductType productType;
+
+    @OneToMany(mappedBy = "product")
+    private List<ProductAttributeValue> productAttributeValue;
+
 }

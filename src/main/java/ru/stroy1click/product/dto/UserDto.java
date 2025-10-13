@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
+import ru.stroy1click.product.model.Role;
 
 import java.io.Serializable;
 
@@ -18,7 +19,7 @@ import java.io.Serializable;
 @Builder
 public class UserDto implements Serializable {
 
-    private final static Long SerialVersionUID= 1L;
+    private final static long SerialVersionUID= 1L;
 
     private Long id;
 

@@ -23,7 +23,6 @@ public class SubcategoryDto implements Serializable {
     @Min(value = 1, message = "{validation.subcategorydto.category_id.min}")
     private Integer categoryId;
 
-    @NotBlank(message = "{validation.subcategorydto.image.not_blank}")
     private String image;
 
     @NotBlank(message = "{validation.subcategorydto.title.not_blank}")

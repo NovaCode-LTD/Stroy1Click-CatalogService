@@ -18,7 +18,6 @@ public class CategoryDto implements Serializable {
 
     private Integer id;
 
-    @NotBlank(message = "{validation.categorydto.image.not_blank}")
     private String image;
 
     @NotBlank(message = "{validation.categorydto.title.not_blank}")
