@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.stroy1click.product.dto.ProductDto;
 import ru.stroy1click.product.exception.ValidationException;
+import ru.stroy1click.product.model.ProductAttributeFilter;
 import ru.stroy1click.product.repository.ProductRepository;
 import ru.stroy1click.product.service.product.ProductPaginationService;
 import ru.stroy1click.product.service.product.ProductService;
@@ -38,23 +39,37 @@ public class ProductPaginationServiceImpl implements ProductPaginationService {
         Page<Integer> productIds;
 
         if (Stream.of(categoryId, subcategoryId, productType).filter(Objects::nonNull).count() > 1) {
-            throw new ValidationException("Можно указать только один фильтр: categoryId, subcategoryId или productType");
+            throw new ValidationException(
+                    this.messageSource.getMessage(
+                            "error.filter.invalid_combination",
+                            null,
+                            Locale.getDefault()
+                    )
+            );
         } else if (categoryId != null) {
-            productIds = productRepository.findProductIdsByCategory_Id(categoryId, pageable);
+            productIds = this.productRepository.findProductIdsByCategory_Id(categoryId, pageable);
         } else if (subcategoryId != null) {
-            productIds = productRepository.findProductIdsBySubcategory_Id(subcategoryId, pageable);
+            productIds = this.productRepository.findProductIdsBySubcategory_Id(subcategoryId, pageable);
         } else if (productType != null) {
-            productIds = productRepository.findProductIdsByProductType_Id(productType, pageable);
+            productIds = this.productRepository.findProductIdsByProductType_Id(productType, pageable);
         } else {
             throw new ValidationException(
                     this.messageSource.getMessage(
-                            "",
+                            "error.filter.empty",
                             null,
                             Locale.getDefault()
                     )
             );
         }
 
+        return productIds.stream()
+                .map(this.productService::get)
+                .toList();
+    }
+
+    @Override
+    public List<ProductDto> getByFilter(ProductAttributeFilter productAttributeFilter, Pageable pageable) {
+        Page<Integer> productIds = this.productRepository.findIdsByAttributes(productAttributeFilter, pageable);
         return productIds.stream()
                 .map(this.productService::get)
                 .toList();

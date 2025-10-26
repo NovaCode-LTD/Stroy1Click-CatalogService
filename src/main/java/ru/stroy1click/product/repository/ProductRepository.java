@@ -4,14 +4,18 @@ package ru.stroy1click.product.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.stroy1click.product.entity.Product;
+import ru.stroy1click.product.model.ProductAttributeFilter;
+import ru.stroy1click.product.specification.ProductSpecification;
+
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Integer>{ //TODO сделать JpaSpecificationExecutor
+public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> { //TODO сделать JpaSpecificationExecutor
 
     Optional<Product> findByTitle(String title);
 
@@ -23,4 +27,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer>{ //TO
 
     @Query("select p.id from Product p where p.productType.id = :productTypeId")
     Page<Integer> findProductIdsByProductType_Id(@Param("productTypeId") Integer productTypeId, Pageable pageable);
+
+    default Page<Integer> findIdsByAttributes(ProductAttributeFilter filter, Pageable pageable) {
+        Page<Product> page = findAll(ProductSpecification.filterByAttributes(filter), pageable);
+        return page.map(Product::getId);
+    }
 }

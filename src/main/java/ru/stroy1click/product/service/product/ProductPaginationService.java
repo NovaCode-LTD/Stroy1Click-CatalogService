@@ -2,6 +2,8 @@ package ru.stroy1click.product.service.product;
 
 import org.springframework.data.domain.Pageable;
 import ru.stroy1click.product.dto.ProductDto;
+import ru.stroy1click.product.entity.ProductAttributeValue;
+import ru.stroy1click.product.model.ProductAttributeFilter;
 
 import java.util.List;
 
@@ -11,4 +13,6 @@ public interface ProductPaginationService {
                                  Integer subcategoryId,
                                  Integer productType,
                                  Pageable pageable);
+
+    List<ProductDto> getByFilter(ProductAttributeFilter productAttributeFilter, Pageable pageable);
 }

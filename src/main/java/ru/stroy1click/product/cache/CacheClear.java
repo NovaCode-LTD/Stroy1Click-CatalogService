@@ -2,8 +2,8 @@ package ru.stroy1click.product.cache;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RMapCache;
-import org.redisson.api.RedissonClient;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CacheClear {
 
-    private final RedissonClient redissonClient;
+    private final CacheManager cacheManager;
 
     public void clearSubcategoriesOfCategory(Integer categoryId){
         log.info("clearSubcategoriesOfCertainCategory {}", categoryId);
@@ -25,7 +25,7 @@ public class CacheClear {
 
     public void clearPaginationOfProductsByCategory(Integer categoryId){
         log.info("clearPaginationOfProductsByCategory {}", categoryId);
-        deleteCache("clearPaginationOfProductsByCategory", categoryId);
+        deleteCache("clearPaginationOfProductsByCategory", categoryId); //TODO ERROR!
     }
 
     public void clearPaginationOfProductsBySubcategory(Integer subcategoryId){
@@ -54,7 +54,9 @@ public class CacheClear {
     }
 
     private void deleteCache(String key, Integer value){
-        RMapCache<Integer, Object> mapCache = this.redissonClient.getMapCache(key);
-        mapCache.fastRemove(value);
+        Cache cache = this.cacheManager.getCache(key);
+        if(cache != null){
+            cache.evict(value);
+        }
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.stroy1click.product.cache.CacheClear;
 import ru.stroy1click.product.dto.ProductDto;
 import ru.stroy1click.product.dto.ProductImageDto;
+import ru.stroy1click.product.entity.ProductAttributeValue;
 import ru.stroy1click.product.exception.NotFoundException;
 import ru.stroy1click.product.mapper.ProductMapper;
 import ru.stroy1click.product.entity.Product;
