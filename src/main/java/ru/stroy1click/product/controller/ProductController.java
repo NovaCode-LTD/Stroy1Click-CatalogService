@@ -11,16 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.stroy1click.product.dto.ProductAttributeValueDto;
 import ru.stroy1click.product.dto.ProductDto;
+import ru.stroy1click.product.dto.ProductImageDto;
 import ru.stroy1click.product.exception.ValidationException;
-import ru.stroy1click.product.model.ProductResponse;
+import ru.stroy1click.product.model.ProductAttributeFilter;
 import ru.stroy1click.product.service.product.ProductAttributeValueService;
 import ru.stroy1click.product.service.product.ProductImageService;
 import ru.stroy1click.product.service.product.ProductPaginationService;
 import ru.stroy1click.product.service.product.ProductService;
+import ru.stroy1click.product.util.ImageValidatorUtils;
 import ru.stroy1click.product.util.ValidationErrorUtils;
-import ru.stroy1click.product.validator.base.CreateValidator;
-import ru.stroy1click.product.validator.base.UpdateValidator;
 import ru.stroy1click.product.validator.product.ProductCreateValidator;
 import ru.stroy1click.product.validator.product.ProductUpdateValidator;
 
@@ -48,20 +49,45 @@ public class ProductController {
 
     private final ProductAttributeValueService productAttributeValueService;
 
+    private final ImageValidatorUtils imageValidator;
+
     @GetMapping("/{id}")
     @Operation(summary = "Получить продукт")
-    public ProductResponse get(@PathVariable("id") Integer id){
-        return ProductResponse.builder()
-                .productDto(this.productService.get(id))
-                .images(this.productImageService.getAllByProductId(id))
-                .values(this.productAttributeValueService.getAllByProductId(id))
-                .build();
+    public ProductDto get(@PathVariable("id") Integer id){
+        return this.productService.get(id);
+    }
+
+    @GetMapping("/{id}/images")
+    @Operation(summary = "Получить изображения продукта")
+    public List<ProductImageDto> getImages(@PathVariable("id") Integer id){
+        return this.productImageService.getAllByProductId(id);
+    }
+
+    @GetMapping("/{id}/attribute-values")
+    @Operation(summary = "Получить значение атрибутов продукта")
+    public List<ProductAttributeValueDto> getAttributesValue(@PathVariable("id") Integer id){
+        return this.productAttributeValueService.getAllByProductId(id);
+    }
+
+    @GetMapping("/filter")
+    public List<ProductDto> get( @RequestParam(value = "page", defaultValue = "0") Integer page,
+                                      @RequestParam(value = "size", defaultValue = "10") Integer size,
+                                      @RequestBody @Valid ProductAttributeFilter productAttributeFilter,
+                                      BindingResult bindingResult){
+        if(bindingResult.hasFieldErrors()) throw new ValidationException(ValidationErrorUtils.collectErrorsToString(
+                bindingResult.getFieldErrors()
+        ));
+
+        return this.productPaginationService.getByFilter(productAttributeFilter,
+                PageRequest.of(page, size));
     }
 
     @PostMapping("/{id}/images")
     @Operation(summary = "Загрузить изображения продукту")
     public ResponseEntity<String> assignImages(@PathVariable("id") Integer id,
-                                               List<MultipartFile> images){
+                                               @RequestParam("images") List<MultipartFile> images){
+        this.imageValidator.validateImages(images);
+
         this.productService.assignImages(id, images);
         return ResponseEntity.ok(
                 this.messageSource.getMessage(
