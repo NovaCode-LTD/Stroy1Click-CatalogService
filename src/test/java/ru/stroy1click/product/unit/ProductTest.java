@@ -6,7 +6,10 @@ import org.mockito.*;
 import org.springframework.context.MessageSource;
 import org.springframework.web.multipart.MultipartFile;
 import ru.stroy1click.product.cache.CacheClear;
+import ru.stroy1click.product.dto.CategoryDto;
 import ru.stroy1click.product.dto.ProductDto;
+import ru.stroy1click.product.dto.ProductTypeDto;
+import ru.stroy1click.product.dto.SubcategoryDto;
 import ru.stroy1click.product.entity.Category;
 import ru.stroy1click.product.entity.Product;
 import ru.stroy1click.product.entity.ProductType;
@@ -14,14 +17,19 @@ import ru.stroy1click.product.entity.Subcategory;
 import ru.stroy1click.product.exception.NotFoundException;
 import ru.stroy1click.product.mapper.ProductMapper;
 import ru.stroy1click.product.repository.ProductRepository;
+import ru.stroy1click.product.service.category.CategoryService;
 import ru.stroy1click.product.service.product.ProductImageService;
 import ru.stroy1click.product.service.product.impl.ProductServiceImpl;
+import ru.stroy1click.product.service.product.type.ProductTypeService;
 import ru.stroy1click.product.service.storage.StorageService;
+import ru.stroy1click.product.service.subcategory.SubcategoryService;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class ProductTest {
@@ -44,11 +52,23 @@ class ProductTest {
     @Mock
     private ProductImageService productImageService;
 
+    @Mock
+    private CategoryService categoryService;
+
+    @Mock
+    private SubcategoryService subcategoryService;
+
+    @Mock
+    private ProductTypeService productTypeService;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
     private Product product;
     private ProductDto productDto;
+    private CategoryDto categoryDto;
+    private SubcategoryDto subcategoryDto;
+    private ProductTypeDto productTypeDto;
 
     @BeforeEach
     public void setUp() {
@@ -62,6 +82,24 @@ class ProductTest {
 
         ProductType type = new ProductType();
         type.setId(3);
+
+        this.categoryDto = CategoryDto.builder()
+                .id(1)
+                .title("Electronics")
+                .image("image.png")
+                .build();
+
+        this.subcategoryDto = SubcategoryDto.builder()
+                .id(2)
+                .title("Phones")
+                .image("image.png")
+                .build();
+
+        this.productTypeDto = ProductTypeDto.builder()
+                .id(3)
+                .title("Apple")
+                .image("image.png")
+                .build();
 
         this.product = Product.builder()
                 .id(1)
@@ -110,8 +148,11 @@ class ProductTest {
     }
 
     @Test
-    public void create_ShouldSaveEntity_AndClearCache() {
+    public void create_ShouldSaveEntity() {
         when(this.productMapper.toEntity(this.productDto)).thenReturn(this.product);
+        when(this.categoryService.get(this.productDto.getCategoryId())).thenReturn(this.categoryDto);
+        when(this.subcategoryService.get(this.productDto.getSubcategoryId())).thenReturn(this.subcategoryDto);
+        when(this.productTypeService.get(this.productDto.getProductTypeId())).thenReturn(this.productTypeDto);
 
         this.productService.create(this.productDto);
 
@@ -119,6 +160,54 @@ class ProductTest {
         verify(this.cacheClear).clearPaginationOfProductsByCategory(1);
         verify(this.cacheClear).clearPaginationOfProductsBySubcategory(2);
         verify(this.cacheClear).clearPaginationOfProductsByProductType(3);
+    }
+
+    @Test
+    public void create_ShouldThrowNotFoundException_WhenCategoryNotExits() {
+        when(this.productMapper.toEntity(this.productDto)).thenReturn(this.product);
+        when(this.categoryService.get(this.productDto.getCategoryId())).thenThrow(
+                new NotFoundException("Category not found")
+        );
+
+        NotFoundException notFoundException = assertThrows(
+                NotFoundException.class, () -> this.productService.create(this.productDto)
+        );
+
+        verify(this.categoryService).get(this.productDto.getCategoryId());
+        assertEquals("Category not found", notFoundException.getMessage());
+    }
+
+    @Test
+    public void create_ShouldThrowNotFoundException_WhenSubcategoryNotExits() {
+        when(this.productMapper.toEntity(this.productDto)).thenReturn(this.product);
+        when(this.categoryService.get(this.productDto.getCategoryId())).thenReturn(this.categoryDto);
+        when(this.subcategoryService.get(this.productDto.getSubcategoryId())).thenThrow(
+                new NotFoundException("Subcategory not found")
+        );
+
+        NotFoundException notFoundException = assertThrows(
+                NotFoundException.class, () -> this.productService.create(this.productDto)
+        );
+
+        verify(this.categoryService).get(this.productDto.getCategoryId());
+        assertEquals("Subcategory not found", notFoundException.getMessage());
+    }
+
+    @Test
+    public void create_ShouldThrowNotFoundException_WhenProductTypeNotExits() {
+        when(this.productMapper.toEntity(this.productDto)).thenReturn(this.product);
+        when(this.categoryService.get(this.productDto.getCategoryId())).thenReturn(this.categoryDto);
+        when(this.subcategoryService.get(this.productDto.getSubcategoryId())).thenReturn(this.subcategoryDto);
+        when(this.productTypeService.get(this.productDto.getProductTypeId())).thenThrow(
+                new NotFoundException("ProductType not found")
+        );
+
+        NotFoundException notFoundException = assertThrows(
+                NotFoundException.class, () -> this.productService.create(this.productDto)
+        );
+
+        verify(this.categoryService).get(this.productDto.getCategoryId());
+        assertEquals("ProductType not found", notFoundException.getMessage());
     }
 
     @Test

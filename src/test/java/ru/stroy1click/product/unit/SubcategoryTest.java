@@ -6,18 +6,22 @@ import org.mockito.*;
 import org.springframework.context.MessageSource;
 import org.springframework.web.multipart.MultipartFile;
 import ru.stroy1click.product.cache.CacheClear;
+import ru.stroy1click.product.dto.CategoryDto;
 import ru.stroy1click.product.dto.SubcategoryDto;
 import ru.stroy1click.product.entity.Category;
 import ru.stroy1click.product.entity.Subcategory;
 import ru.stroy1click.product.exception.NotFoundException;
 import ru.stroy1click.product.mapper.SubcategoryMapper;
 import ru.stroy1click.product.repository.SubcategoryRepository;
+import ru.stroy1click.product.service.category.CategoryService;
 import ru.stroy1click.product.service.storage.StorageService;
 import ru.stroy1click.product.service.subcategory.impl.SubcategoryServiceImpl;
 
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class SubcategoryTest {
@@ -37,12 +41,16 @@ class SubcategoryTest {
     @Mock
     private StorageService storageService;
 
+    @Mock
+    private CategoryService categoryService;
+
     @InjectMocks
     private SubcategoryServiceImpl subcategoryService;
 
     private Subcategory subcategory;
     private SubcategoryDto subcategoryDto;
     private Category category;
+    private CategoryDto categoryDto;
 
     @BeforeEach
     public void setUp() {
@@ -51,6 +59,7 @@ class SubcategoryTest {
         this.category = Category.builder()
                 .id(10)
                 .title("Electronics")
+                .image("link.png")
                 .build();
 
         this.subcategory = Subcategory.builder()
@@ -60,7 +69,17 @@ class SubcategoryTest {
                 .category(this.category)
                 .build();
 
-        this.subcategoryDto = new SubcategoryDto(1, 10, "phone.png", "Smartphones");
+        this.categoryDto = CategoryDto.builder()
+                .id(10)
+                .image("link.png")
+                .build();
+
+        this.subcategoryDto = SubcategoryDto.builder()
+                .id(1)
+                .categoryId(10)
+                .title("Smartphones")
+                .image("phone.png")
+                .build();
 
         when(this.messageSource.getMessage(anyString(), any(), any()))
                 .thenReturn("Subcategory not found");
@@ -89,12 +108,30 @@ class SubcategoryTest {
     @Test
     public void create_ShouldSaveEntity() {
         when(this.subcategoryMapper.toEntity(this.subcategoryDto)).thenReturn(this.subcategory);
+        when(this.categoryService.get(this.subcategoryDto.getCategoryId())).thenReturn(this.categoryDto);
 
         this.subcategoryService.create(this.subcategoryDto);
 
         ArgumentCaptor<Subcategory> captor = ArgumentCaptor.forClass(Subcategory.class);
         verify(this.subcategoryRepository).save(captor.capture());
+        verify(this.categoryService).get(this.subcategoryDto.getCategoryId());
         assertThat(captor.getValue()).isEqualTo(this.subcategory);
+    }
+
+    @Test
+    public void create_ShouldThrowNotFoundException_WhenCategoryNotExits() {
+        when(this.subcategoryMapper.toEntity(this.subcategoryDto)).thenReturn(this.subcategory);
+        when(this.categoryService.get(this.subcategoryDto.getCategoryId())).thenThrow(
+                new NotFoundException("Category not found")
+        );
+
+        NotFoundException notFoundException = assertThrows(
+                NotFoundException.class, () -> this.subcategoryService.create(this.subcategoryDto)
+        );
+
+        ArgumentCaptor<Subcategory> captor = ArgumentCaptor.forClass(Subcategory.class);
+        verify(this.categoryService).get(this.subcategoryDto.getCategoryId());
+        assertEquals("Category not found", notFoundException.getMessage());
     }
 
     @Test
