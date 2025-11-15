@@ -16,9 +16,12 @@ import ru.stroy1click.product.entity.Product;
 import ru.stroy1click.product.exception.NotFoundException;
 import ru.stroy1click.product.mapper.ProductMapper;
 import ru.stroy1click.product.repository.ProductRepository;
+import ru.stroy1click.product.service.category.CategoryService;
 import ru.stroy1click.product.service.product.ProductImageService;
 import ru.stroy1click.product.service.product.ProductService;
+import ru.stroy1click.product.service.product.type.ProductTypeService;
 import ru.stroy1click.product.service.storage.StorageService;
+import ru.stroy1click.product.service.subcategory.SubcategoryService;
 
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +46,12 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductImageService productImageService;
 
+    private final CategoryService categoryService;
+
+    private final SubcategoryService subcategoryService;
+
+    private final ProductTypeService productTypeService;
+
     @Override
     @Cacheable(value = "product", key = "#id")
     public ProductDto get(Integer id) {
@@ -61,6 +70,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void create(ProductDto productDto) {
         log.info("create {}", productDto);
+
+        this.categoryService.get(productDto.getCategoryId());
+        this.subcategoryService.get(productDto.getSubcategoryId());
+        this.productTypeService.get(productDto.getProductTypeId());
+
         this.productRepository.save(this.productMapper.toEntity(productDto));
 
         clearPaginationCache(productDto.getCategoryId(), productDto.getSubcategoryId(), productDto.getProductTypeId());

@@ -7,6 +7,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.web.multipart.MultipartFile;
 import ru.stroy1click.product.cache.CacheClear;
 import ru.stroy1click.product.dto.ProductTypeDto;
+import ru.stroy1click.product.dto.SubcategoryDto;
 import ru.stroy1click.product.entity.ProductType;
 import ru.stroy1click.product.entity.Subcategory;
 import ru.stroy1click.product.exception.NotFoundException;
@@ -14,10 +15,13 @@ import ru.stroy1click.product.mapper.ProductTypeMapper;
 import ru.stroy1click.product.repository.ProductTypeRepository;
 import ru.stroy1click.product.service.product.type.impl.ProductTypeServiceImpl;
 import ru.stroy1click.product.service.storage.StorageService;
+import ru.stroy1click.product.service.subcategory.SubcategoryService;
 
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class ProductTypeTest {
@@ -37,12 +41,16 @@ class ProductTypeTest {
     @Mock
     private StorageService storageService;
 
+    @Mock
+    private SubcategoryService subcategoryService;
+
     @InjectMocks
     private ProductTypeServiceImpl productTypeService;
 
     private ProductType productType;
     private ProductTypeDto productTypeDto;
     private Subcategory subcategory;
+    private SubcategoryDto subcategoryDto;
 
     @BeforeEach
     public void setUp() {
@@ -51,6 +59,7 @@ class ProductTypeTest {
         this.subcategory = Subcategory.builder()
                 .id(5)
                 .title("Phones")
+                .image("link.png")
                 .build();
 
         this.productType = ProductType.builder()
@@ -60,7 +69,18 @@ class ProductTypeTest {
                 .subcategory(this.subcategory)
                 .build();
 
-        this.productTypeDto = new ProductTypeDto(1, 5, "smart.png", "Smartphones");
+        this.subcategoryDto = SubcategoryDto.builder()
+                .id(5)
+                .title("Phones")
+                .image("link.png")
+                .build();
+
+        this.productTypeDto = ProductTypeDto.builder()
+                .id(1)
+                .subcategoryId(5)
+                .title("Smartphones")
+                .title("smart.png")
+                .build();
 
         when(this.messageSource.getMessage(anyString(), any(), any()))
                 .thenReturn("ProductType not found");
@@ -89,13 +109,31 @@ class ProductTypeTest {
     @Test
     public void create_ShouldSaveEntity() {
         when(this.productTypeMapper.toEntity(this.productTypeDto)).thenReturn(this.productType);
+        when(this.subcategoryService.get(this.productTypeDto.getSubcategoryId())).thenReturn(this.subcategoryDto);
 
         this.productTypeService.create(this.productTypeDto);
 
         ArgumentCaptor<ProductType> captor = ArgumentCaptor.forClass(ProductType.class);
         verify(this.productTypeRepository).save(captor.capture());
+        verify(this.subcategoryService).get(this.productTypeDto.getSubcategoryId());
         assertThat(captor.getValue()).isEqualTo(this.productType);
     }
+
+    @Test
+    public void create_ShouldThrowNotFoundException_WhenSubcategoryNotExits() {
+        when(this.productTypeMapper.toEntity(this.productTypeDto)).thenReturn(this.productType);
+        when(this.subcategoryService.get(this.productTypeDto.getSubcategoryId())).thenThrow(
+                new NotFoundException("Subcategory not found")
+        );
+
+        NotFoundException notFoundException = assertThrows(
+                NotFoundException.class, () -> this.productTypeService.create(this.productTypeDto)
+        );
+
+        verify(this.subcategoryService).get(this.productTypeDto.getSubcategoryId());
+        assertEquals("Subcategory not found", notFoundException.getMessage());
+    }
+
 
     @Test
     public void update_ShouldUpdateExistingProductType() {
@@ -110,7 +148,7 @@ class ProductTypeTest {
 
         assertThat(saved.getTitle()).isEqualTo("New Type");
         assertThat(saved.getSubcategory()).isEqualTo(this.subcategory);
-        assertThat(saved.getImage()).isNull(); // 🔥 image не сохраняется в update()
+        assertThat(saved.getImage()).isNull();
     }
 
     @Test

@@ -17,6 +17,7 @@ import ru.stroy1click.product.entity.ProductType;
 import ru.stroy1click.product.repository.ProductTypeRepository;
 import ru.stroy1click.product.service.storage.StorageService;
 import ru.stroy1click.product.service.product.type.ProductTypeService;
+import ru.stroy1click.product.service.subcategory.SubcategoryService;
 
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,8 @@ public class ProductTypeServiceImpl implements ProductTypeService {
 
     private final StorageService storageService;
 
+    private final SubcategoryService subcategoryService;
+
     @Override
     @Cacheable(value = "productType", key = "#id")
     public ProductTypeDto get(Integer id) {
@@ -56,6 +59,9 @@ public class ProductTypeServiceImpl implements ProductTypeService {
     @Transactional
     public void create(ProductTypeDto productTypeDto) {
         log.info("create {}", productTypeDto);
+
+        this.subcategoryService.get(productTypeDto.getSubcategoryId());
+
         this.productTypeRepository.save(this.productTypeMapper.toEntity(productTypeDto));
     }
 

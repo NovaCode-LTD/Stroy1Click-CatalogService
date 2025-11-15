@@ -12,11 +12,10 @@ import ru.stroy1click.product.model.Role;
 
 import java.io.Serializable;
 
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class UserDto implements Serializable {
 
     private final static long SerialVersionUID= 1L;

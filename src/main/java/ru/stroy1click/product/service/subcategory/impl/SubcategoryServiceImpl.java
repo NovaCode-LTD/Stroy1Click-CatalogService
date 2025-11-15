@@ -10,11 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.stroy1click.product.cache.CacheClear;
+import ru.stroy1click.product.dto.CategoryDto;
 import ru.stroy1click.product.dto.SubcategoryDto;
 import ru.stroy1click.product.exception.NotFoundException;
 import ru.stroy1click.product.mapper.SubcategoryMapper;
 import ru.stroy1click.product.entity.Subcategory;
 import ru.stroy1click.product.repository.SubcategoryRepository;
+import ru.stroy1click.product.service.category.CategoryService;
 import ru.stroy1click.product.service.storage.StorageService;
 import ru.stroy1click.product.service.subcategory.SubcategoryService;
 
@@ -38,6 +40,8 @@ public class SubcategoryServiceImpl implements SubcategoryService {
 
     private final StorageService storageService;
 
+    private final CategoryService categoryService;
+
     @Override
     @Cacheable(value = "subcategory", key = "#id")
     public SubcategoryDto get(Integer id) {
@@ -57,6 +61,9 @@ public class SubcategoryServiceImpl implements SubcategoryService {
     @CacheEvict(value = "subcategoriesOfCategory", key = "#subcategoryDto.categoryId")
     public void create(SubcategoryDto subcategoryDto) {
         log.info("create {}", subcategoryDto);
+
+        this.categoryService.get(subcategoryDto.getCategoryId());
+
         this.subcategoryRepository.save(this.subcategoryMapper.toEntity(subcategoryDto));
     }
 
