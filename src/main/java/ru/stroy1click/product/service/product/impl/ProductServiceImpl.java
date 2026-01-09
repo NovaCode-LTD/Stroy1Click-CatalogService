@@ -126,8 +126,8 @@ public class ProductServiceImpl implements ProductService {
     @CacheEvict(value = "product", key = "#id")
     @Transactional
     public void delete(Integer id) {
-        //TODO согласовать удаление с attribute service: нужно корректное удаление кешей.
         log.info("delete {}", id);
+
         Product product = this.productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(
                         this.messageSource.getMessage(
@@ -148,6 +148,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Optional<Product> getByTitle(String title) {
         log.info("getByTitle {}", title);
+
         return this.productRepository.findByTitle(title);
     }
 

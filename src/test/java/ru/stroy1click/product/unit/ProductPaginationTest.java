@@ -59,9 +59,9 @@ class ProductPaginationTest {
         when(this.productRepository.findProductIdsByCategory_Id(1, pageable)).thenReturn(page);
         when(this.productService.get(anyInt())).thenReturn(this.sampleProduct);
 
-        List<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
+        Page<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
 
-        assertEquals(3, result.size());
+        assertEquals(3, result.getTotalElements());
         verify(this.productRepository).findProductIdsByCategory_Id(1, pageable);
         for (Integer id : productIds) {
             verify(this.productService).get(id);
@@ -75,30 +75,11 @@ class ProductPaginationTest {
 
         when(this.productRepository.findProductIdsByCategory_Id(1, pageable)).thenReturn(emptyPage);
 
-        List<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
+        Page<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
 
         assertTrue(result.isEmpty());
         verify(this.productRepository).findProductIdsByCategory_Id(1, pageable);
         verify(this.productService, never()).get(anyInt());
-    }
-
-    @Test
-    void getByFilter() {
-        Pageable pageable = PageRequest.of(0, 10);
-        ProductAttributeFilter filter = new ProductAttributeFilter();
-        List<Integer> productIds = List.of(1, 2);
-        Page<Integer> page = new PageImpl<>(productIds);
-
-        when(this.productRepository.findIdsByAttributes(filter, pageable)).thenReturn(page);
-        when(this.productService.get(anyInt())).thenReturn(this.sampleProduct);
-
-        List<ProductDto> result = this.productPaginationService.getByFilter(filter, pageable);
-
-        assertEquals(2, result.size());
-        verify(this.productRepository).findIdsByAttributes(filter, pageable);
-        for (Integer id : productIds) {
-            verify(this.productService).get(id);
-        }
     }
 
     @Test
@@ -154,9 +135,9 @@ class ProductPaginationTest {
         when(this.productRepository.findProductIdsByCategory_Id(1, pageable)).thenReturn(page);
         when(this.productService.get(anyInt())).thenReturn(this.sampleProduct);
 
-        List<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
+        Page<ProductDto> result = this.productPaginationService.getProducts(1, null, null, pageable);
 
-        assertEquals(5, result.size());
+        assertEquals(5, result.getNumberOfElements());
         verify(this.productRepository).findProductIdsByCategory_Id(eq(1), any(Pageable.class));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
