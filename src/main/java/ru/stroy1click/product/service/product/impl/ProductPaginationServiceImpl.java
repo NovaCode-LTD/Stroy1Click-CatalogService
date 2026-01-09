@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,7 @@ public class ProductPaginationServiceImpl implements ProductPaginationService {
     private final MessageSource messageSource;
 
     @Override
-    public List<ProductDto> getProducts(Integer categoryId,
+    public Page<ProductDto> getProducts(Integer categoryId,
                                         Integer subcategoryId,
                                         Integer productType,
                                         Pageable pageable){
@@ -62,16 +63,10 @@ public class ProductPaginationServiceImpl implements ProductPaginationService {
             );
         }
 
-        return productIds.stream()
+        List<ProductDto> products = productIds.getContent().stream()
                 .map(this.productService::get)
                 .toList();
-    }
 
-    @Override
-    public List<ProductDto> getByFilter(ProductAttributeFilter productAttributeFilter, Pageable pageable) {
-        Page<Integer> productIds = this.productRepository.findIdsByAttributes(productAttributeFilter, pageable);
-        return productIds.stream()
-                .map(this.productService::get)
-                .toList();
+        return new PageImpl<>(products, pageable, productIds.getTotalElements());
     }
 }

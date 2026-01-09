@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -59,19 +60,6 @@ public class ProductController {
         return this.productImageService.getAllByProductId(id);
     }
 
-    @GetMapping("/filter")
-    public List<ProductDto> get( @RequestParam(value = "page", defaultValue = "0") Integer page,
-                                      @RequestParam(value = "size", defaultValue = "10") Integer size,
-                                      @RequestBody @Valid ProductAttributeFilter productAttributeFilter,
-                                      BindingResult bindingResult){
-        if(bindingResult.hasFieldErrors()) throw new ValidationException(ValidationErrorUtils.collectErrorsToString(
-                bindingResult.getFieldErrors()
-        ));
-
-        return this.productPaginationService.getByFilter(productAttributeFilter,
-                PageRequest.of(page, size));
-    }
-
     @PostMapping("/{id}/images")
     @Operation(summary = "Загрузить изображения продукту")
     public ResponseEntity<String> assignImages(@PathVariable("id") Integer id,
@@ -104,12 +92,12 @@ public class ProductController {
 
     @GetMapping
     @Operation(summary = "Получить продукты с пагинацией")
-    public List<ProductDto> getProducts(
+    public Page<ProductDto> getProducts(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "size", defaultValue = "20") Integer size,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "subcategoryId", required = false) Integer subcategoryId,
-            @RequestParam(value = "productType", required = false) Integer productType
+            @RequestParam(value = "productTypeId", required = false) Integer productType
     ) {
         return productPaginationService.getProducts(categoryId, subcategoryId, productType, PageRequest.of(page, size));
     }

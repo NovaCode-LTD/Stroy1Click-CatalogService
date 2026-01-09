@@ -2,6 +2,8 @@ package ru.stroy1click.product.service.storage.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -68,17 +70,19 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public byte[] downloadImage(String key) {
-        log.info("downloadFile {}", key);
+    @Cacheable(value = "image", key = "#fileName")
+    public byte[] downloadImage(String fileName) {
+        log.info("downloadFile {}", fileName);
         ResponseBytes<GetObjectResponse> objectAsBytes =
                 this.s3Client.getObjectAsBytes(GetObjectRequest.builder()
                         .bucket(this.storageProperties.getBucketName())
-                        .key(key)
+                        .key(fileName)
                         .build());
         return objectAsBytes.asByteArray();
     }
 
     @Override
+    @CacheEvict(value = "image", key = "#fileName")
     public void deleteImage(String fileName) {
         log.info("deleteFile {}", fileName);
         this.s3Client.deleteObject(DeleteObjectRequest.builder()
